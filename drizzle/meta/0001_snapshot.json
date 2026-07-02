@@ -1,0 +1,195 @@
+{
+  "id": "f6c35ce6-9034-4718-baf6-73826492a2f1",
+  "prevId": "3ee0bd4d-3cf4-4adf-b42f-812f62ac0ddc",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "leonardojurado.com.negociaciones": {
+      "name": "negociaciones",
+      "schema": "leonardojurado.com",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "codigo": {
+          "name": "codigo",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "estado": {
+          "name": "estado",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fecha_creacion": {
+          "name": "fecha_creacion",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "fecha_revelacion": {
+          "name": "fecha_revelacion",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "negociaciones_estado_idx": {
+          "name": "negociaciones_estado_idx",
+          "columns": [
+            {
+              "expression": "estado",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "negociaciones_codigo_unique": {
+          "name": "negociaciones_codigo_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "codigo"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "negociaciones_estado_check": {
+          "name": "negociaciones_estado_check",
+          "value": "\"leonardojurado.com\".\"negociaciones\".\"estado\" in ('pendiente', 'una_oferta', 'completa', 'revelada', 'cancelada')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "leonardojurado.com.ofertas": {
+      "name": "ofertas",
+      "schema": "leonardojurado.com",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "negociacion_id": {
+          "name": "negociacion_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "monto": {
+          "name": "monto",
+          "type": "numeric(12, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "revelada": {
+          "name": "revelada",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "fecha_registro": {
+          "name": "fecha_registro",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "ip_hash": {
+          "name": "ip_hash",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_agent": {
+          "name": "user_agent",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "ofertas_negociacion_id_idx": {
+          "name": "ofertas_negociacion_id_idx",
+          "columns": [
+            {
+              "expression": "negociacion_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "ofertas_negociacion_id_negociaciones_id_fk": {
+          "name": "ofertas_negociacion_id_negociaciones_id_fk",
+          "tableFrom": "ofertas",
+          "tableTo": "negociaciones",
+          "schemaTo": "leonardojurado.com",
+          "columnsFrom": [
+            "negociacion_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ofertas_monto_check": {
+          "name": "ofertas_monto_check",
+          "value": "\"leonardojurado.com\".\"ofertas\".\"monto\" > 0"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {
+    "leonardojurado.com": "leonardojurado.com"
+  },
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
