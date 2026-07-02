@@ -139,6 +139,32 @@ async function crearNegociacion(): Promise<Negociacion> {
   throw new ServiceError('CODIGO_NO_DISPONIBLE');
 }
 
+async function iniciarNegociacion(
+  nombre: string,
+  monto: string | number,
+): Promise<Negociacion> {
+  // Diferimos la creación hasta la primera oferta: recién aquí se inserta la
+  // fila, de modo que abandonar el flujo no deja negociaciones vacías en la BD.
+  const negociacion = await crearNegociacion();
+  try {
+    return await registrarOferta(negociacion.id, nombre, monto);
+  } catch (error) {
+    // Si la oferta no se pudo registrar (p. ej. validación), no dejamos huérfana
+    // la negociación recién creada.
+    await negociacionesRepo.eliminarNegociacion(negociacion.id);
+    throw error;
+  }
+}
+
+async function cancelarNegociacion(negociacionId: string): Promise<void> {
+  const negociacion = await cargarNegociacion(negociacionId);
+  if (negociacion.estado === 'revelada') {
+    throw new ServiceError('NEGOCIACION_REVELADA');
+  }
+  // Borrado físico: las ofertas asociadas caen por ON DELETE CASCADE.
+  await negociacionesRepo.eliminarNegociacion(negociacionId);
+}
+
 async function registrarOferta(
   negociacionId: string,
   nombre: string,
@@ -228,6 +254,8 @@ async function obtenerDetalle(
 
 export const NegotiationService = {
   crearNegociacion,
+  iniciarNegociacion,
+  cancelarNegociacion,
   registrarOferta,
   revelarNegociacion,
   obtenerResultado,

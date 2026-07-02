@@ -19,3 +19,12 @@ export const registrarOfertaInputSchema = z.object({
 export type RegistrarOfertaActionInput = z.infer<
   typeof registrarOfertaInputSchema
 >;
+
+export const iniciarNegociacionInputSchema = z.object({
+  nombre: z.string(),
+  monto: z.union([z.string(), z.number()]),
+});
+
+export type IniciarNegociacionActionInput = z.infer<
+  typeof iniciarNegociacionInputSchema
+>;

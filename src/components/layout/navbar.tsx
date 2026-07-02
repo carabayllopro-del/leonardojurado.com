@@ -11,7 +11,7 @@ export function Navbar() {
           href="/"
           className="text-sm font-semibold tracking-tight text-neutral-900"
         >
-          Negociación Ciega
+          Negociación Justa
         </Link>
         <div className="flex items-center gap-4 text-sm">
           <Link

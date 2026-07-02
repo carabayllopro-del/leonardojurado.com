@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
 
-import { crearNegociacionAction } from '@/actions/negociaciones/crear-negociacion.action';
+import { cancelarNegociacionAction } from '@/actions/negociaciones/cancelar-negociacion.action';
+import { iniciarNegociacionAction } from '@/actions/negociaciones/iniciar-negociacion.action';
 import { revelarNegociacionAction } from '@/actions/negociaciones/revelar-negociacion.action';
 import { registrarOfertaAction } from '@/actions/ofertas/registrar-oferta.action';
 import { OfertaForm } from '@/components/negociacion/oferta-form';
@@ -17,7 +18,6 @@ import type { ResultadoNegociacion } from '@/lib/services/negotiation.service';
 
 type Paso =
   | 'inicio'
-  | 'crear'
   | 'oferta1'
   | 'oferta1-ok'
   | 'oferta2'
@@ -45,30 +45,40 @@ export function NegociacionFlow() {
     setError(null);
   }
 
-  function crear() {
+  function guardarOferta(nombre: string, monto: string, siguiente: Paso) {
     setError(null);
     startTransition(async () => {
-      const res = await crearNegociacionAction();
+      // La primera oferta crea la negociación (creación diferida); la segunda
+      // se registra sobre la negociación ya existente.
+      const res = negociacion
+        ? await registrarOfertaAction({
+            negociacionId: negociacion.id,
+            nombre,
+            monto,
+          })
+        : await iniciarNegociacionAction({ nombre, monto });
       if (res.success) {
-        setNegociacion({ id: res.data.id, codigo: res.data.codigo });
-        setPaso('oferta1');
+        if (!negociacion) {
+          setNegociacion({ id: res.data.id, codigo: res.data.codigo });
+        }
+        setPaso(siguiente);
       } else {
         setError(res.error.message);
       }
     });
   }
 
-  function guardarOferta(nombre: string, monto: string, siguiente: Paso) {
-    if (!negociacion) return;
+  function cancelar() {
+    // En 'oferta1' aún no existe la negociación: no hay nada que borrar.
+    if (!negociacion) {
+      reiniciar();
+      return;
+    }
     setError(null);
     startTransition(async () => {
-      const res = await registrarOfertaAction({
-        negociacionId: negociacion.id,
-        nombre,
-        monto,
-      });
+      const res = await cancelarNegociacionAction(negociacion.id);
       if (res.success) {
-        setPaso(siguiente);
+        reiniciar();
       } else {
         setError(res.error.message);
       }
@@ -96,34 +106,18 @@ export function NegociacionFlow() {
       {paso === 'inicio' ? (
         <>
           <Header
-            title="Negociación Ciega"
+            title="Negociación Justa"
             subtitle="Registra dos ofertas por separado. Ninguna se muestra hasta que ambas estén cargadas y decidas revelar el resultado."
           />
           <div>
-            <Button tamano="lg" onClick={() => setPaso('crear')}>
-              Nueva negociación
-            </Button>
-          </div>
-        </>
-      ) : null}
-
-      {paso === 'crear' ? (
-        <>
-          <Header
-            title="Nueva negociación"
-            subtitle="Se generará un código único para identificar esta negociación."
-          />
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Button tamano="lg" onClick={crear} disabled={isPending}>
-              {isPending ? 'Creando…' : 'Comenzar'}
-            </Button>
             <Button
               tamano="lg"
-              variante="secundario"
-              onClick={() => setPaso('inicio')}
-              disabled={isPending}
+              onClick={() => {
+                setError(null);
+                setPaso('oferta1');
+              }}
             >
-              Volver
+              Nueva negociación
             </Button>
           </div>
         </>
@@ -131,10 +125,7 @@ export function NegociacionFlow() {
 
       {paso === 'oferta1' ? (
         <>
-          <Header
-            title="Primera oferta"
-            subtitle={`Referencia: ${negociacion?.codigo ?? ''}`}
-          />
+          <Header title="Primera oferta" />
           <Card>
             <OfertaForm
               key="oferta1"
@@ -144,6 +135,16 @@ export function NegociacionFlow() {
               }
             />
           </Card>
+          <div>
+            <Button
+              tamano="lg"
+              variante="secundario"
+              onClick={cancelar}
+              disabled={isPending}
+            >
+              Cancelar
+            </Button>
+          </div>
         </>
       ) : null}
 
@@ -156,9 +157,21 @@ export function NegociacionFlow() {
               <p>Entregue el dispositivo a la segunda persona.</p>
             </div>
           </Card>
-          <div>
-            <Button tamano="lg" onClick={() => setPaso('oferta2')}>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Button
+              tamano="lg"
+              onClick={() => setPaso('oferta2')}
+              disabled={isPending}
+            >
               Continuar
+            </Button>
+            <Button
+              tamano="lg"
+              variante="secundario"
+              onClick={cancelar}
+              disabled={isPending}
+            >
+              Cancelar
             </Button>
           </div>
         </>
@@ -166,10 +179,7 @@ export function NegociacionFlow() {
 
       {paso === 'oferta2' ? (
         <>
-          <Header
-            title="Segunda oferta"
-            subtitle={`Referencia: ${negociacion?.codigo ?? ''}`}
-          />
+          <Header title="Segunda oferta" />
           <Card>
             <OfertaForm
               key="oferta2"
@@ -179,6 +189,16 @@ export function NegociacionFlow() {
               }
             />
           </Card>
+          <div>
+            <Button
+              tamano="lg"
+              variante="secundario"
+              onClick={cancelar}
+              disabled={isPending}
+            >
+              Cancelar
+            </Button>
+          </div>
         </>
       ) : null}
 
@@ -190,9 +210,19 @@ export function NegociacionFlow() {
               Las dos ofertas fueron registradas correctamente.
             </p>
           </Card>
-          <Button tamano="lg" fullWidth onClick={revelar} disabled={isPending}>
-            {isPending ? 'Revelando…' : 'Revelar negociación'}
-          </Button>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Button tamano="lg" onClick={revelar} disabled={isPending}>
+              {isPending ? 'Revelando…' : 'Revelar negociación'}
+            </Button>
+            <Button
+              tamano="lg"
+              variante="secundario"
+              onClick={cancelar}
+              disabled={isPending}
+            >
+              Cancelar
+            </Button>
+          </div>
         </>
       ) : null}
 

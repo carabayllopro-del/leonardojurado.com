@@ -4,6 +4,10 @@ const numeroFormatter = new Intl.NumberFormat('es-PE', {
 });
 
 const fechaFormatter = new Intl.DateTimeFormat('es-PE', {
+  // Fijamos la zona horaria del Perú (UTC-5) para que las fechas se muestren
+  // siempre en hora peruana, sin importar la zona del servidor (en producción
+  // suele ser UTC) ni la del navegador de cada visitante.
+  timeZone: 'America/Lima',
   dateStyle: 'medium',
   timeStyle: 'short',
 });

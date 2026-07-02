@@ -10,7 +10,13 @@ import { z } from 'zod';
  * variables (prefixed with NEXT_PUBLIC_) in a separate module when needed.
  */
 const serverEnvSchema = z.object({
-  DATABASE_URL: z.string().url(),
+  DATABASE_URL: z
+    .string()
+    .min(1, 'DATABASE_URL es obligatoria.')
+    .refine(
+      (value) => /^postgres(ql)?:\/\//i.test(value),
+      'DATABASE_URL debe ser una cadena de conexión PostgreSQL (postgres:// o postgresql://).',
+    ),
   NODE_ENV: z
     .enum(['development', 'test', 'production'])
     .default('development'),

@@ -8,7 +8,7 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
-  title: 'Negociación Ciega',
+  title: 'Negociación Justa',
   description:
     'Registra dos ofertas por separado y revela el resultado solo cuando ambas estén cargadas.',
 };
